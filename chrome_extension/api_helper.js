@@ -1,4 +1,4 @@
-import alert_message_for_routine from './background.js';
+import {alert_message_for_routine, executeScript} from './background.js';
 
 export function post_data(user_id, timestamp, record_key, record){
   fetch("http://127.0.0.1:5000/upload_blob", {
@@ -15,10 +15,14 @@ export function post_data(user_id, timestamp, record_key, record){
   })
   .then(response => response.json())
   .then(data => {
-    console.log("Sending record with RecordKey: " + record_key + " is " + data['message']);
+    console.log("Sending record with RecordKey: " + record_key + " is " + data['result']);
   })
   .catch(error => {
-    console.log("Error while inserting to database: " + error);
+    console.log("Error while sending the record with RecordKey: " + record_key + ", Error: " + error);
+    chrome.storage.local.set({"stopped" : "1"}).then(() => {
+      console.log("Stopped parameter is set to 1 successfully");
+    });
+    executeScript("force_stop");
   });
 }
 

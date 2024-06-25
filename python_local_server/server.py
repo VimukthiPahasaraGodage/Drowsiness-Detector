@@ -1,7 +1,10 @@
 from flask import Flask, request, jsonify
 import base64
+import threading
 
 app = Flask(__name__)
+
+
 
 
 @app.route('/', methods=['GET'])
@@ -34,7 +37,7 @@ def upload_blob():
     # Optionally, process the byte array further if needed
     
     # Return a response (optional)
-    return jsonify({'message': 'jghjfdjh'})
+    return jsonify({'result': 'jghjfdjh'})
 
 
 if __name__ == '__main__':

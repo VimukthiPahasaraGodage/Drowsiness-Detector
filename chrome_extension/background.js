@@ -1,103 +1,144 @@
 import {post_data, get_data} from './api_helper.js';
 
-function code(command) {
-  // let chunks = []
-  navigator.mediaDevices.getUserMedia({
-    video: true,
-  }).then(mediaStream => {
-    // Use MediaStream Recording API
-    const mediaRecorder = new MediaRecorder(mediaStream, {
-      mimeType: 'video/webm'
+let mediaStream;
+let mediaRecorder;
+
+function reset_local_storage(){
+  for (let i = 1; i <= 2; i++) {
+    var record_key = "record_" + String(i);
+    chrome.storage.local.set({record_key : ""}).then(() => {
+      console.log("Record " + String(i) + " is cleared from the local storage");
+    });
+  }
+  
+  chrome.storage.local.set({"max_record_key" : "0"}).then(() => {
+    console.log("Max record key is set to 0 successfully");
   });
-    // Make the mediaStream global 
-    window.mediaStream = mediaStream; 
-    // Make the mediaRecorder global 
-    window.mediaRecorder = mediaRecorder;
-    // fires every one second and passes an BlobEvent
-    window.mediaRecorder.ondataavailable = event => {
+  
+  chrome.storage.local.set({"current_record_key" : "1"}).then(() => {
+    console.log("Current record key is set to 1 successfully");
+  });
+
+  chrome.storage.local.set({"stopped" : "1"}).then(() => {
+    console.log("Stopped parameter is set to 1 successfully");
+  });
+}
+
+async function code(command) {
+  alert(command);
+  if (command == "stop" || command == "force_stop"){
+    mediaRecorder.stop();
+    mediaStream.getTracks().forEach(track => track.stop());
+    
+    for (let i = 1; i <= 2; i++) {
+      var record_key = "record_" + String(i);
+      chrome.storage.local.set({record_key : ""}).then(() => {
+        console.log("Record " + String(i) + " is cleared from the local storage");
+      });
+    }
+    
+    chrome.storage.local.set({"max_record_key" : "0"}).then(() => {
+      console.log("Max record key is set to 0 successfully");
+    });
+    
+    chrome.storage.local.set({"current_record_key" : "1"}).then(() => {
+      console.log("Current record key is set to 1 successfully");
+    });
+
+    if (command == "force_stop"){
+      alert("Sleepiness Detector stopped due to and error!");
+    }
+  }else if (command == "start"){
+    for (let i = 1; i <= 2; i++) {
+      var record_key = "record_" + String(i);
+      chrome.storage.local.set({record_key : ""}).then(() => {
+        console.log("Record " + String(i) + " is cleared from the local storage");
+      });
+    }
+    
+    chrome.storage.local.set({"max_record_key" : "0"}).then(() => {
+      console.log("Max record key is set to 0 successfully");
+    });
+    
+    chrome.storage.local.set({"current_record_key" : "1"}).then(() => {
+      console.log("Current record key is set to 1 successfully");
+    });
+  
+    chrome.storage.local.set({"stopped" : "0"}).then(() => {
+      console.log("Stopped parameter is set to 0 successfully");
+    });
+
+    mediaStream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+    });
+  
+    mediaRecorder = new MediaRecorder(mediaStream, {
+      mimeType: 'video/webm'
+    });
+
+    mediaRecorder.start(60000);
+
+    let count = 0;
+  
+    mediaRecorder.ondataavailable = (event) => {
       let reader = new FileReader();
       reader.readAsDataURL(event.data);
       reader.onloadend = function () {
         let record = reader.result;
-        chrome.storage.local.set({"record": record}).then(() => {
-          //NOOP
+        chrome.storage.local.get("stopped", function (state) {
+          let stopped = state['stopped'];
+          if (stopped == "0"){
+            chrome.storage.local.get("max_record_key", function (items) {
+              let max_record_key = items['max_record_key'];
+              max_record_key = parseInt(max_record_key, 10);
+              if (max_record_key < 2){
+                max_record_key += 1;
+                if (count == 0){
+                  record += "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+                  count += 1
+                }
+                var record_key = "record_" + String(max_record_key);
+                chrome.storage.local.set({record_key : record}).then(() => {
+                  max_record_key = String(max_record_key);
+                  chrome.storage.local.set({"max_record_key" : max_record_key}).then(() => {
+                    //NOOP
+                  });
+                });
+              } else if (max_record_key >= 2){
+                chrome.storage.local.set({"max_record_key" : "10000"}).then(() => {
+                  //NOOP
+                });
+              }
+            });
+          } else if (stopped == "1"){
+            for (let i = 1; i <= 2; i++) {
+              var record_key = "record_" + String(i);
+              chrome.storage.local.set({record_key : ""}).then(() => {
+                console.log("Record " + String(i) + " is cleared from the local storage");
+              });
+            }
+            
+            chrome.storage.local.set({"max_record_key" : "0"}).then(() => {
+              console.log("Max record key is set to 0 successfully");
+            });
+            
+            chrome.storage.local.set({"current_record_key" : "1"}).then(() => {
+              console.log("Current record key is set to 1 successfully");
+            });
+          }
         });
       }
-      // chunks.push(event.data)
-
-      // var tempLink = document.createElement("a");
-      // let timestamp = String(Date.now());
-      // //var textBlob = new Blob([base64String], {type: 'text/plain'});
-      // tempLink.setAttribute('href', URL.createObjectURL(event.data));
-      // tempLink.setAttribute('download', timestamp + ".webm");
-      // tempLink.click();
-
-      // var tempLink_r = document.createElement("a");
-      // var textBlob = new Blob(chunks, {type: 'video/webm'});
-      // tempLink_r.setAttribute('href', URL.createObjectURL(textBlob));
-      // tempLink_r.setAttribute('download', timestamp + "_full.webm");
-      // tempLink_r.click();
-      //window.mediaRecorder.stop();
-
-      // let reader = new FileReader();
-      // reader.readAsDataURL(event.data);
-      // reader.onloadend = function () {
-      //   let base64String = reader.result;
-      //   var tempLink = document.createElement("a");
-      //   let timestamp = String(Date.now());
-      //   var textBlob = new Blob([base64String], {type: 'text/plain'});
-      //   tempLink.setAttribute('href', URL.createObjectURL(textBlob));
-      //   tempLink.setAttribute('download', timestamp + ".txt");
-      //   tempLink.click();
-        // chrome.storage.local.get("record", function (items) {
-        //   // let record = items['record'];
-        //   // if (record = ""){
-        //   //   record = base64String;
-        //   // }else{
-        //   //   record = record + base64String.split('base64,')[1];
-        //   // }
-        //   // var tempLink = document.createElement("a");
-        //   //   let timestamp = String(Date.now());
-        //   //   tempLink.setAttribute('href', URL.createObjectURL(event.data));
-        //   //   tempLink.setAttribute('download', timestamp + ".mp4");
-        //   //   tempLink.click();
-        //   let record = items['record'];
-        //     if (record = ""){
-        //       record = base64String;
-        //     }else{
-        //       record = record + base64String.split('base64,')[1];
-        //     }
-        //   chrome.storage.local.set({"record": record}).then(() => {
-        //     // mediaRecorder.stop();
-        //     // mediaStream.getTracks().forEach(track => track.stop());
-        //     // code("start");
-            
-        //     var tempLink = document.createElement("a");
-        //       let timestamp = String(Date.now());
-        //       tempLink.setAttribute('href', URL.createObjectURL(event.data));
-        //       tempLink.setAttribute('download', timestamp + ".mp4");
-        //       tempLink.click();
-        //     });
-        // });
-      //}
-    };
-    window.mediaRecorder.start(60000);
-    // // make data available event fire every one minute
-    // if (command == "start"){
-      
-    // } else if (command == "stop"){
-    //   // window.mediaRecorder.stop();
-    //   // window.mediaRecorder.getTracks().forEach(track => track.stop());
-    // }
-  });
+    }
+  }
 }
 
 const commands = {
   start: ["start"],
-  stop: ["stop"]
+  stop: ["stop"],
+  force_stop: ["force_stop"]
 };
 
-async function executeScript(command) {
+export async function executeScript(command) {
   if (!(command in commands)) return;
   const [tab] = await chrome.tabs.query({ active: true });
   const scriptInjection = {
@@ -108,7 +149,7 @@ async function executeScript(command) {
   chrome.scripting.executeScript(scriptInjection);
 }
 
-export default function alert_message_for_routine(routine){
+export function alert_message_for_routine(routine){
   console.log("Alerting user about the routine " + routine);
   if (routine == "1"){
     chrome.notifications.create({
@@ -137,36 +178,37 @@ const create_alarm_for_retrieving_data = () => {
   chrome.alarms.create("Retrieve_Data_Alarm", {periodInMinutes: 1.0});
 }
 
-
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name == "Record_Sending_Alarm"){
     console.log("Trying to send data...");
-    chrome.storage.local.get("record", function (items) {
-      let record = items['record'];
-      if (record != ""){
-        let timestamp = String(Date.now());
-        let record_length = record.length;
-        let chunk_size = Math.floor(record_length / 20);
-        let start_index = 0;
-        let end_index = chunk_size;
-        let chunk_number = 1;
-        while(true){
-          let sending_record = record.substring(start_index, end_index);
-          post_data("Vimukthi", timestamp, String(chunk_number), record);
-          break;
-          if (end_index >= record_length){
-            break;
+    chrome.storage.local.get("stopped", function (state) {
+      let stopped = state['stopped'];
+      if (stopped == "0"){
+        chrome.storage.local.get("max_record_key", function (max_record_keys) {
+          let max_record_key = parseInt(max_record_keys['max_record_key'], 10);
+          if (max_record_key < 1) {
+            console.log("No recordings have been produced to consume");
+          } else if (max_record_key <= 2){
+            chrome.storage.local.get("current_record_key", function (current_record_keys) {
+              let current_record_key = parseInt(current_record_keys['current_record_key'], 10);
+              console.log("Current record key: " + String(current_record_key) + ", Max record key: " + String(max_record_key));
+              for (let i = current_record_key; i <= max_record_key; i++) {
+                let timestamp = String(Date.now());
+                chrome.storage.local.get("record", function (items) {
+                  let record = items['record'];
+                  post_data("Vimukthi", timestamp, String(i), record);
+                });
+              }
+              reset_local_storage();
+            });
+          } else {
+            // Something went wrong with consuming the recordings
+            executeScript("force_stop");
+            console.log("Recording production overflowed. Something is wrong with the consumer!")
           }
-          chunk_number += 1;
-          start_index = end_index;
-          end_index += chunk_size;
-          if (end_index > record_length){
-            end_index = record_length;
-          }
-        }
-        console.log("Record sent successfully");
-      }else{
-        console.log("No records to send");
+        });
+      } else if (stopped == "1"){
+        console.log("No recordings have been produced to consume");
       }
     });
   } else if (alarm.name == "Retrieve_Data_Alarm") {
@@ -193,19 +235,6 @@ async function createOffscreen() {
 // Execute starting logic
 console.log("Drowsiness detector started!!!");
 
-chrome.storage.local.set({"record": ""}).then(() => {
-  console.log("Local storage cleared");
-});
-// async function keeping_alive() {
-//   await chrome.offscreen.createDocument({
-//     url: 'offscreen.html',
-//     reasons: ['BLOBS'],
-//     justification: 'keep service worker running',
-//   }).catch(() => {});
-// }
-// chrome.runtime.onStartup.addListener(keeping_alive);
-// self.onmessage = e => {}; // keepAlive
-// keeping_alive();
-
+reset_local_storage();
 create_alarm_for_sending_data();
 create_alarm_for_retrieving_data();
