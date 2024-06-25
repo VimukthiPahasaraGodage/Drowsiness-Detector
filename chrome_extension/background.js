@@ -25,7 +25,6 @@ function reset_local_storage(){
 }
 
 async function code(command) {
-  alert(command);
   if (command == "stop" || command == "force_stop"){
     mediaRecorder.stop();
     mediaStream.getTracks().forEach(track => track.stop());
@@ -192,10 +191,14 @@ chrome.alarms.onAlarm.addListener((alarm) => {
             chrome.storage.local.get("current_record_key", function (current_record_keys) {
               let current_record_key = parseInt(current_record_keys['current_record_key'], 10);
               console.log("Current record key: " + String(current_record_key) + ", Max record key: " + String(max_record_key));
+              let timestamp = String(Date.now());
               for (let i = current_record_key; i <= max_record_key; i++) {
-                let timestamp = String(Date.now());
-                chrome.storage.local.get("record", function (items) {
-                  let record = items['record'];
+                console.log("current key for sending " + String(i));
+                var record_key = "record_" + String(i);
+                console.log("current record key for sending " + record_key);
+                chrome.storage.local.get(record_key, function (items) {
+                  console.log(items);
+                  let record = items[record_key];
                   post_data("Vimukthi", timestamp, String(i), record);
                 });
               }
