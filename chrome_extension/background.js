@@ -4,23 +4,20 @@ let mediaStream;
 let mediaRecorder;
 
 function reset_local_storage(){
-  for (let i = 1; i <= 2; i++) {
-    var record_key = "record_" + String(i);
-    chrome.storage.local.set({record_key : ""}).then(() => {
-      console.log("Record " + String(i) + " is cleared from the local storage");
-    });
-  }
+  chrome.storage.local.set({"record_1" : ""}).then(() => {
+    console.log("Record 1 is cleared from the local storage");
+  });
+
+  chrome.storage.local.set({"record_2" : ""}).then(() => {
+    console.log("Record 2 is cleared from the local storage");
+  });
   
   chrome.storage.local.set({"max_record_key" : "0"}).then(() => {
     console.log("Max record key is set to 0 successfully");
   });
-  
-  chrome.storage.local.set({"current_record_key" : "1"}).then(() => {
-    console.log("Current record key is set to 1 successfully");
-  });
 
-  chrome.storage.local.set({"stopped" : "1"}).then(() => {
-    console.log("Stopped parameter is set to 1 successfully");
+  chrome.storage.local.set({"stopped" : "0"}).then(() => {
+    console.log("Stopped parameter is set to 0 successfully");
   });
 }
 
@@ -29,38 +26,32 @@ async function code(command) {
     mediaRecorder.stop();
     mediaStream.getTracks().forEach(track => track.stop());
     
-    for (let i = 1; i <= 2; i++) {
-      var record_key = "record_" + String(i);
-      chrome.storage.local.set({record_key : ""}).then(() => {
-        console.log("Record " + String(i) + " is cleared from the local storage");
-      });
-    }
+    chrome.storage.local.set({"record_1" : ""}).then(() => {
+      console.log("Record 1 is cleared from the local storage");
+    });
+
+    chrome.storage.local.set({"record_2" : ""}).then(() => {
+      console.log("Record 2 is cleared from the local storage");
+    });
     
     chrome.storage.local.set({"max_record_key" : "0"}).then(() => {
       console.log("Max record key is set to 0 successfully");
-    });
-    
-    chrome.storage.local.set({"current_record_key" : "1"}).then(() => {
-      console.log("Current record key is set to 1 successfully");
     });
 
     if (command == "force_stop"){
       alert("Sleepiness Detector stopped due to and error!");
     }
   }else if (command == "start"){
-    for (let i = 1; i <= 2; i++) {
-      var record_key = "record_" + String(i);
-      chrome.storage.local.set({record_key : ""}).then(() => {
-        console.log("Record " + String(i) + " is cleared from the local storage");
-      });
-    }
+    chrome.storage.local.set({"record_1" : ""}).then(() => {
+      console.log("Record 1 is cleared from the local storage");
+    });
+
+    chrome.storage.local.set({"record_2" : ""}).then(() => {
+      console.log("Record 2 is cleared from the local storage");
+    });
     
     chrome.storage.local.set({"max_record_key" : "0"}).then(() => {
       console.log("Max record key is set to 0 successfully");
-    });
-    
-    chrome.storage.local.set({"current_record_key" : "1"}).then(() => {
-      console.log("Current record key is set to 1 successfully");
     });
   
     chrome.storage.local.set({"stopped" : "0"}).then(() => {
@@ -91,18 +82,25 @@ async function code(command) {
               let max_record_key = items['max_record_key'];
               max_record_key = parseInt(max_record_key, 10);
               if (max_record_key < 2){
-                max_record_key += 1;
                 if (count == 0){
                   record += "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
                   count += 1
                 }
-                var record_key = "record_" + String(max_record_key);
-                chrome.storage.local.set({record_key : record}).then(() => {
-                  max_record_key = String(max_record_key);
-                  chrome.storage.local.set({"max_record_key" : max_record_key}).then(() => {
-                    //NOOP
+                if (max_record_key == 0){
+                  chrome.storage.local.set({"record_1" : record}).then(() => {
+                    max_record_key = String(max_record_key);
+                    chrome.storage.local.set({"max_record_key" : "1"}).then(() => {
+                      //NOOP
+                    });
                   });
-                });
+                } else if (max_record_key == 1){
+                  chrome.storage.local.set({"record_2" : record}).then(() => {
+                    max_record_key = String(max_record_key);
+                    chrome.storage.local.set({"max_record_key" : "2"}).then(() => {
+                      //NOOP
+                    });
+                  });
+                }      
               } else if (max_record_key >= 2){
                 chrome.storage.local.set({"max_record_key" : "10000"}).then(() => {
                   //NOOP
@@ -110,19 +108,16 @@ async function code(command) {
               }
             });
           } else if (stopped == "1"){
-            for (let i = 1; i <= 2; i++) {
-              var record_key = "record_" + String(i);
-              chrome.storage.local.set({record_key : ""}).then(() => {
-                console.log("Record " + String(i) + " is cleared from the local storage");
-              });
-            }
+            chrome.storage.local.set({"record_1" : ""}).then(() => {
+              console.log("Record 1 is cleared from the local storage");
+            });
+
+            chrome.storage.local.set({"record_2" : ""}).then(() => {
+              console.log("Record 2 is cleared from the local storage");
+            });
             
             chrome.storage.local.set({"max_record_key" : "0"}).then(() => {
               console.log("Max record key is set to 0 successfully");
-            });
-            
-            chrome.storage.local.set({"current_record_key" : "1"}).then(() => {
-              console.log("Current record key is set to 1 successfully");
             });
           }
         });
@@ -188,21 +183,31 @@ chrome.alarms.onAlarm.addListener((alarm) => {
           if (max_record_key < 1) {
             console.log("No recordings have been produced to consume");
           } else if (max_record_key <= 2){
-            chrome.storage.local.get("current_record_key", function (current_record_keys) {
-              let current_record_key = parseInt(current_record_keys['current_record_key'], 10);
-              console.log("Current record key: " + String(current_record_key) + ", Max record key: " + String(max_record_key));
-              let timestamp = String(Date.now());
-              for (let i = current_record_key; i <= max_record_key; i++) {
-                console.log("current key for sending " + String(i));
-                var record_key = "record_" + String(i);
-                console.log("current record key for sending " + record_key);
-                chrome.storage.local.get(record_key, function (items) {
-                  console.log(items);
-                  let record = items[record_key];
-                  post_data("Vimukthi", timestamp, String(i), record);
+            console.log("Max record key: " + String(max_record_key));
+            let timestamp = String(Date.now());
+            for (let i = 1; i <= max_record_key; i++) {
+              if (i == 1){
+                chrome.storage.local.get("record_1", function (items_1) {
+                  let record = items_1["record_1"];
+                  post_data("Vimukthi", timestamp, "1", record);
+                });
+              } else if (i == 2){
+                chrome.storage.local.get("record_2", function (items_2) {
+                  let record = items_2["record_2"];
+                  post_data("Vimukthi", timestamp, "2", record);
                 });
               }
-              reset_local_storage();
+            }
+            chrome.storage.local.set({"record_1" : ""}).then(() => {
+              console.log("Record 1 is cleared from the local storage");
+            });
+          
+            chrome.storage.local.set({"record_2" : ""}).then(() => {
+              console.log("Record 2 is cleared from the local storage");
+            });
+            
+            chrome.storage.local.set({"max_record_key" : "0"}).then(() => {
+              console.log("Max record key is set to 0 successfully");
             });
           } else {
             // Something went wrong with consuming the recordings
