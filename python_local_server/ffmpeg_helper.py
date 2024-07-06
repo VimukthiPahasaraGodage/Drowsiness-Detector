@@ -11,9 +11,10 @@ def trim_video(in_file, out_file, start, end):
 
     input_stream = ffmpeg.input(in_file)
     # pts = "PTS-STARTPTS"
-    video = input_stream.trim(start=start, end=end)
+    video = input_stream.trim(start=start, end=end, duration=60)
     output = ffmpeg.output(video, out_file)
     output.run()
 
 
-trim_video("my_file.webm", "out.webm", 0, 60)
+# trim_video("abc.mkv", "abc_output.mkv", 60, 120)
+
