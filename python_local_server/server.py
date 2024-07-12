@@ -49,6 +49,7 @@ def trim_and_send_video(index):
             record_string = base64.b64encode(record_file.read())
             dict_to_send = {'UserId': 'Vimukthi', 'Time': str(current_milli_time()), 'Record': record_string.decode('utf-8')}
             res = requests.post('https://mha2r6r8a9.execute-api.us-east-1.amazonaws.com/postVideoData', json=dict_to_send)
+            # check for the res variable for the success of the http request
             trim_index_inspections.append(index)
             print(res)
             print(trim_index_inspections)

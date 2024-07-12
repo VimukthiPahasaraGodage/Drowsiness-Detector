@@ -1,15 +1,12 @@
 import boto3
-import json
-import calendar
 import time
 import base64
 import cv2
-import ffmpeg
 import dlib
 import uuid
 
 from scipy.spatial import distance
-from boto3.dynamodb.conditions import Key, Attr
+from boto3.dynamodb.conditions import Attr
 from tqdm import tqdm
 
 already_checked_timestamps = set()
@@ -42,7 +39,7 @@ def detect(video_file):
     face_detector = dlib.get_frontal_face_detector()
 
     dlib_facelandmark = dlib.shape_predictor(
-        "/content/shape_predictor_68_face_landmarks.dat")
+        "C:\\shape_predictor_68_face_landmarks.dat")
 
     def Detect_Eye(eye):
         poi_A = distance.euclidean(eye[1], eye[5])
@@ -115,7 +112,7 @@ s3.Bucket("facialvideorecordings").download_file("shape_predictor_68_face_landma
                                                  'shape_predictor_68_face_landmarks.dat')
 
 while True:
-    scan_timestamp = get_timestamp() - (60000 * 30)
+    scan_timestamp = get_timestamp() - (60000 * 4)
     response = video_table.scan(
         FilterExpression=Attr('UserId').eq('Vimukthi') & Attr('Time').gt(str(scan_timestamp)) & Attr(
             'StatusOfRecord').eq('Unprocessed')
